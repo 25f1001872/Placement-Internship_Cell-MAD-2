@@ -1,0 +1,21 @@
+# Python / Flask
+__pycache__/
+*.pyc
+venv/
+env/
+instance/
+*.db
+.env
+
+# Node / Vue
+node_modules/
+dist/
+.vite/
+
+# Redis/Celery
+celerybeat-schedule
+*.rdb
+
+# IDE
+.vscode/
+.idea/
