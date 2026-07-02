@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterStudent from '../views/RegisterStudent.vue'
 import RegisterCompany from '../views/RegisterCompany.vue'
-import HomePage from '../views/HomePage.vue'
 
 const routes = [
     { path: '/', component: HomePage },
@@ -11,6 +11,8 @@ const routes = [
     { path: '/register/company', component: RegisterCompany },
     { path: '/admin/dashboard', component: () => import('../views/admin/AdminDashboard.vue'), meta: { requiresAuth: true, role: 'admin' } },
     { path: '/company/dashboard', component: () => import('../views/company/CompanyDashboard.vue'), meta: { requiresAuth: true, role: 'company' } },
+    { path: '/company/create-drive', component: () => import('../views/company/CreateDrive.vue'), meta: { requiresAuth: true, role: 'company' } },
+    { path: '/company/drives/:drive_id/applications', component: () => import('../views/company/DriveApplications.vue'), meta: { requiresAuth: true, role: 'company' } },
     { path: '/student/dashboard', component: () => import('../views/student/StudentDashboard.vue'), meta: { requiresAuth: true, role: 'student' } },
 ]
 
