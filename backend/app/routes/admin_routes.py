@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.models.user import User
 from app.models.student import StudentProfile
 from app.models.company import CompanyProfile
@@ -10,8 +10,8 @@ from ..extensions import db
 admin_bp = Blueprint('admin', __name__)
 
 def admin_required():
-    identity = get_jwt_identity()
-    if identity['role'] != 'admin':
+    claims = get_jwt()
+    if claims.get('role') != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
     return None
 

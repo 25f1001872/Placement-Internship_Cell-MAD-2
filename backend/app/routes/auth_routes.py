@@ -33,7 +33,7 @@ def login():
         if student and student.is_blacklisted:
             return jsonify({'error': 'Account is blacklisted'}), 403
 
-    access_token = create_access_token(identity={'id': user.id, 'role': user.role})
+    access_token = create_access_token(identity=str(user.id), additional_claims={'role': user.role})
     return jsonify({'token': access_token, 'role': user.role, 'name': user.name}), 200
 
 @auth_bp.route('/api/auth/register/student', methods=['POST'])
