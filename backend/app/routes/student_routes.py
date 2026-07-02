@@ -1,55 +1,155 @@
-from flask import Blueprint, flash, redirect, render_template, session, url_for
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.models.student import StudentProfile
 from app.models.company import CompanyProfile
 from app.models.placement_drive import PlacementDrive
 from app.models.application import Application
-from app.models.student import StudentProfile
-from .. import db
+from app.models.user import User
+from ..extensions import db
+
 student_bp = Blueprint('student', __name__)
 
+def get_student_profile():
+    identity = get_jwt_identity()
+    return StudentProfile.query.filter_by(user_id=int(identity)).first()
 
-@student_bp.route('/student/dashboard')
+@student_bp.route('/api/student/dashboard', methods=['GET'])
+@jwt_required()
 def student_dashboard():
-    student_profile = StudentProfile.query.filter_by(user_id=session['user_id']).first()
-    if student_profile.is_blacklisted == True:
-        return "Your profile has been blacklisted by admin. Please contact support for more information."
-    student_id = student_profile.id
-    student_name = student_profile.student_name
-    company_profile = CompanyProfile.query.filter_by(approval_status = 'Approved', is_blacklisted = False).all()
-    applied_drives = Application.query.filter_by(student_id = student_id).all()
-    return render_template('student/dashboard.html' , company_profile = company_profile, applied_drives = applied_drives, student_name = student_name, student_profile = student_profile)
+    student = get_student_profile()
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+    if student.is_blacklisted:
+        return jsonify({'error': 'Your profile has been blacklisted by admin'}), 403
+    user = User.query.get(student.user_id)
+    companies = CompanyProfile.query.filter_by(approval_status='Approved', is_blacklisted=False).all()
+    applied_drives = Application.query.filter_by(student_id=student.id).all()
+    companies_data = []
+    for c in companies:
+        company_user = User.query.get(c.user_id)
+        companies_data.append({'id': c.id, 'name': company_user.name, 'industry': c.industry, 'location': c.location})
+    applied_data = []
+    for a in applied_drives:
+        drive = PlacementDrive.query.get(a.drive_id)
+        applied_data.append({'id': a.id, 'drive_id': a.drive_id, 'job_title': drive.job_title, 'status': a.status, 'applied_at': str(a.applied_at)})
+    return jsonify({
+        'student_name': user.name,
+        'companies': companies_data,
+        'applied_drives': applied_data
+    }), 200
 
-@student_bp.route('/student/company_profiles/<int:company_id>')
-def company_profile(company_id):
-    company_profile = CompanyProfile.query.get(company_id)
-    drive_info = PlacementDrive.query.filter_by(company_id = company_id).all()
-    return render_template('student/company_profile.html', company_profile = company_profile, drive_info = drive_info)
+@student_bp.route('/api/student/drives', methods=['GET'])
+@jwt_required()
+def get_drives():
+    company = request.args.get('company')
+    position = request.args.get('position')
+    skills = request.args.get('skills')
+    query = PlacementDrive.query.filter_by(approval_status='Approved', status='Active')
+    if position:
+        query = query.filter(PlacementDrive.job_title.ilike(f'%{position}%'))
+    if skills:
+        query = query.filter(PlacementDrive.skills_required.ilike(f'%{skills}%'))
+    drives = query.all()
+    result = []
+    for d in drives:
+        company_profile = CompanyProfile.query.get(d.company_id)
+        company_user = User.query.get(company_profile.user_id)
+        if company and company.lower() not in company_user.name.lower():
+            continue
+        result.append({
+            'id': d.id,
+            'company_name': company_user.name,
+            'job_title': d.job_title,
+            'skills_required': d.skills_required,
+            'salary': d.salary,
+            'deadline': str(d.deadline),
+            'status': d.status
+        })
+    return jsonify(result), 200
 
-@student_bp.route('/student/applications_history')
-def applications_history():
-    student_profile = StudentProfile.query.filter_by(user_id=session['user_id']).first()
-    student_id = student_profile.id    
-    applications = Application.query.filter_by(student_id = student_id).all()
+@student_bp.route('/api/student/drives/<int:drive_id>', methods=['GET'])
+@jwt_required()
+def get_drive(drive_id):
+    student = get_student_profile()
+    drive = PlacementDrive.query.get(drive_id)
+    if not drive:
+        return jsonify({'error': 'Drive not found'}), 404
+    company = CompanyProfile.query.get(drive.company_id)
+    company_user = User.query.get(company.user_id)
+    existing = Application.query.filter_by(student_id=student.id, drive_id=drive_id).first()
+    return jsonify({
+        'id': drive.id,
+        'company_name': company_user.name,
+        'job_title': drive.job_title,
+        'job_description': drive.job_description,
+        'skills_required': drive.skills_required,
+        'eligibility': drive.eligibility,
+        'salary': drive.salary,
+        'benefits': drive.benefits,
+        'deadline': str(drive.deadline),
+        'status': drive.status,
+        'already_applied': existing is not None
+    }), 200
 
-    return render_template('student/applications_history.html', applications = applications, Remark = "None", student_profile = student_profile, student_id = student_id)
-
-@student_bp.route('/student/drive_details/<int:drive_id>')
-def drive_details(drive_id):
-    drive_info = PlacementDrive.query.get(drive_id)
-    return render_template('student/drive_details.html', drive = drive_info)
-
-@student_bp.route('/student/drive_details/<int:drive_id>/apply' , methods = ['POST'])
+@student_bp.route('/api/student/drives/<int:drive_id>/apply', methods=['POST'])
+@jwt_required()
 def apply(drive_id):
-    student_profile = StudentProfile.query.filter_by(user_id=session['user_id']).first()
-    student_id = student_profile.id
-    existing_application = Application.query.filter_by(
-    student_id=student_id,
-    drive_id=drive_id
-    ).first()
-
-    if existing_application:
-       flash("You have already applied to this drive!", "warning")
-       return redirect(url_for('student.student_dashboard', drive_id=drive_id))
-    new_application = Application(student_id = student_id, student_name = student_profile.student_name, drive_id = drive_id,)
+    student = get_student_profile()
+    if student.is_blacklisted:
+        return jsonify({'error': 'Your profile has been blacklisted'}), 403
+    existing = Application.query.filter_by(student_id=student.id, drive_id=drive_id).first()
+    if existing:
+        return jsonify({'error': 'You have already applied to this drive'}), 409
+    drive = PlacementDrive.query.get(drive_id)
+    if not drive or drive.status != 'Active':
+        return jsonify({'error': 'Drive is not active'}), 400
+    new_application = Application(student_id=student.id, drive_id=drive_id)
     db.session.add(new_application)
     db.session.commit()
-    return redirect(url_for('student.student_dashboard'))
+    return jsonify({'message': 'Application submitted successfully'}), 201
+
+@student_bp.route('/api/student/applications', methods=['GET'])
+@jwt_required()
+def applications_history():
+    student = get_student_profile()
+    applications = Application.query.filter_by(student_id=student.id).all()
+    result = []
+    for a in applications:
+        drive = PlacementDrive.query.get(a.drive_id)
+        company = CompanyProfile.query.get(drive.company_id)
+        company_user = User.query.get(company.user_id)
+        result.append({
+            'id': a.id,
+            'drive_id': a.drive_id,
+            'job_title': drive.job_title,
+            'company_name': company_user.name,
+            'status': a.status,
+            'applied_at': str(a.applied_at)
+        })
+    return jsonify(result), 200
+
+@student_bp.route('/api/student/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    student = get_student_profile()
+    user = User.query.get(student.user_id)
+    return jsonify({
+        'name': user.name,
+        'email': user.email,
+        'education': student.education,
+        'skills': student.skills,
+        'experience': student.experience,
+        'contact': student.contact
+    }), 200
+
+@student_bp.route('/api/student/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    student = get_student_profile()
+    data = request.get_json()
+    student.education = data.get('education', student.education)
+    student.skills = data.get('skills', student.skills)
+    student.experience = data.get('experience', student.experience)
+    student.contact = data.get('contact', student.contact)
+    db.session.commit()
+    return jsonify({'message': 'Profile updated successfully'}), 200
