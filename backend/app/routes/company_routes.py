@@ -8,6 +8,8 @@ from app.models.student import StudentProfile
 from app.models.user import User
 from ..extensions import db
 
+from app.models.placement import Placement
+
 company_bp = Blueprint('company', __name__)
 
 def get_company_profile():
@@ -82,7 +84,7 @@ def drive_applications(drive_id):
     for a in applications:
         student = StudentProfile.query.get(a.student_id)
         student_user = User.query.get(student.user_id)
-        result.append({'id': a.id, 'student_name': student_user.name, 'status': a.status, 'applied_at': str(a.applied_at)})
+        result.append({'id': a.id, 'student_id': a.student_id, 'student_name': student_user.name, 'status': a.status, 'applied_at': str(a.applied_at)})
     return jsonify({'drive': {'id': drive.id, 'job_title': drive.job_title}, 'applications': result}), 200
 
 @company_bp.route('/api/company/applications/<int:application_id>', methods=['GET'])
@@ -121,5 +123,39 @@ def update_application_status(application_id):
     if new_status not in ['Applied', 'Shortlisted', 'Interview', 'Offer', 'Rejected', 'Placed']:
         return jsonify({'error': 'Invalid status'}), 400
     application.status = new_status
+    if new_status == 'Placed':
+        from app.models.placement import Placement
+        existing_placement = Placement.query.filter_by(student_id=application.student_id, drive_id=application.drive_id).first()
+        if not existing_placement:
+            new_placement = Placement(
+                student_id=application.student_id,
+                company_id=drive.company_id,
+                drive_id=application.drive_id,
+                salary=drive.salary
+            )
+            db.session.add(new_placement)
     db.session.commit()
     return jsonify({'message': 'Status updated'}), 200
+
+@company_bp.route('/api/company/students/<int:student_id>', methods=['GET'])
+@jwt_required()
+def view_student(student_id):
+    company = get_company_profile()
+    student = StudentProfile.query.get(student_id)
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+    user = User.query.get(student.user_id)
+    applications = Application.query.filter_by(student_id=student.id).all()
+    apps_data = []
+    for a in applications:
+        drive = PlacementDrive.query.get(a.drive_id)
+        if drive.company_id == company.id:
+            apps_data.append({'drive_id': a.drive_id, 'job_title': drive.job_title, 'status': a.status, 'applied_at': str(a.applied_at)})
+    return jsonify({
+        'name': user.name,
+        'education': student.education,
+        'skills': student.skills,
+        'experience': student.experience,
+        'contact': student.contact,
+        'applications': apps_data
+    }), 200

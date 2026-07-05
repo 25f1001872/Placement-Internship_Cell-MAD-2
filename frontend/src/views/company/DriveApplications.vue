@@ -22,7 +22,8 @@
             <td>{{ app.status }}</td>
             <td>{{ app.applied_at }}</td>
             <td>
-              <button @click="reviewApplication(app.id)" class="btn btn-outline-primary btn-sm">Review</button>
+              <button @click="reviewApplication(app.id)" class="btn btn-outline-primary btn-sm me-2">Review</button>
+              <button @click="viewStudent(app.student_id)" class="btn btn-outline-secondary btn-sm">Profile</button>
             </td>
           </tr>
         </tbody>
@@ -57,6 +58,23 @@
         </div>
       </div>
 
+      <div v-if="selectedStudent" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog">
+    <div class="modal-content p-4">
+      <h5>{{ selectedStudent.name }}</h5>
+      <p><strong>Education:</strong> {{ selectedStudent.education }}</p>
+      <p><strong>Skills:</strong> {{ selectedStudent.skills }}</p>
+      <p><strong>Experience:</strong> {{ selectedStudent.experience }}</p>
+      <p><strong>Contact:</strong> {{ selectedStudent.contact }}</p>
+      <h6 class="mt-3">Applications</h6>
+      <div v-for="a in selectedStudent.applications" :key="a.drive_id" class="border rounded p-2 mb-1">
+        <span>{{ a.job_title }} | {{ a.status }} | {{ a.applied_at }}</span>
+      </div>
+      <button @click="selectedStudent = null" class="btn btn-secondary btn-sm mt-2">Close</button>
+    </div>
+  </div>
+</div>
+
     </div>
   </div>
 </template>
@@ -70,7 +88,8 @@ export default {
       drive: {},
       applications: [],
       selectedApplication: null,
-      newStatus: ''
+      newStatus: '',
+      selectedStudent: null
     }
   },
   mounted() {
@@ -87,6 +106,10 @@ export default {
       const res = await api.get(`/api/company/applications/${id}`)
       this.selectedApplication = res.data
       this.newStatus = res.data.status
+    },
+    async viewStudent(student_id) {
+    const res = await api.get(`/api/company/students/${student_id}`)
+    this.selectedStudent = res.data
     },
     async updateStatus() {
       await api.post(`/api/company/applications/${this.selectedApplication.application_id}/status`, { status: this.newStatus })
