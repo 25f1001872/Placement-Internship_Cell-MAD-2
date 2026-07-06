@@ -92,6 +92,11 @@
             </tr>
           </tbody>
         </table>
+
+              <div class="mt-3">
+  <button @click="exportCSV" class="btn btn-outline-secondary btn-sm">Export My Applications (CSV)</button>
+</div>
+
       </div>
 
       <div v-if="tab === 'profile'">
@@ -218,6 +223,15 @@ export default {
       await api.put('/api/student/profile', this.profile)
       this.profileMessage = 'Profile updated successfully'
     },
+    async exportCSV() {
+  const res = await api.get('/api/tasks/export/student', { responseType: 'blob' })
+  const url = window.URL.createObjectURL(new Blob([res.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', 'my_applications.csv')
+  document.body.appendChild(link)
+  link.click()
+},
     logout() {
       localStorage.clear()
       this.$router.push('/login')

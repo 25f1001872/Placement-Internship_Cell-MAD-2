@@ -64,7 +64,11 @@
             </tr>
           </tbody>
         </table>
+      <div class="mt-3">
+  <button @click="exportCSV" class="btn btn-outline-secondary btn-sm">Export Applications (CSV)</button>
       </div>
+      </div>
+
 
     </div>
   </div>
@@ -101,6 +105,15 @@ export default {
       await api.post(`/api/company/drives/${id}/close`)
       this.fetchDashboard()
     },
+    async exportCSV() {
+  const res = await api.get('/api/tasks/export/company', { responseType: 'blob' })
+  const url = window.URL.createObjectURL(new Blob([res.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', 'company_applications.csv')
+  document.body.appendChild(link)
+  link.click()
+},
     viewApplications(id) {
       this.$router.push(`/company/drives/${id}/applications`)
     },
