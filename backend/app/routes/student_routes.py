@@ -7,6 +7,8 @@ from app.models.application import Application
 from app.models.user import User
 from ..extensions import db
 
+from app.utils.cache import get_cache, set_cache
+
 student_bp = Blueprint('student', __name__)
 
 def get_student_profile():
@@ -44,6 +46,10 @@ def get_drives():
     company = request.args.get('company')
     position = request.args.get('position')
     skills = request.args.get('skills')
+    cache_key = f"drives:{company}:{position}:{skills}"
+    cached = get_cache(cache_key)
+    if cached:
+        return jsonify(cached), 200
     query = PlacementDrive.query.filter_by(approval_status='Approved', status='Active')
     if position:
         query = query.filter(PlacementDrive.job_title.ilike(f'%{position}%'))
@@ -65,6 +71,7 @@ def get_drives():
             'deadline': str(d.deadline),
             'status': d.status
         })
+    set_cache(cache_key, result, ttl=300)
     return jsonify(result), 200
 
 @student_bp.route('/api/student/drives/<int:drive_id>', methods=['GET'])

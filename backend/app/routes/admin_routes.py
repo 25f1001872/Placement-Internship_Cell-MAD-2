@@ -36,6 +36,8 @@ def admin_dashboard():
         'pending_drives': pending_drives
     }), 200
 
+from app.utils.cache import get_cache, set_cache, delete_pattern
+
 @admin_bp.route('/api/admin/companies', methods=['GET'])
 @jwt_required()
 def get_companies():
@@ -44,6 +46,10 @@ def get_companies():
         return error
     name = request.args.get('name')
     industry = request.args.get('industry')
+    cache_key = f"companies:{name}:{industry}"
+    cached = get_cache(cache_key)
+    if cached:
+        return jsonify(cached), 200
     query = CompanyProfile.query
     if name:
         query = query.join(User, CompanyProfile.user_id == User.id).filter(User.name.ilike(f'%{name}%'))
@@ -62,8 +68,9 @@ def get_companies():
             'company_description': c.company_description,
             'approval_status': c.approval_status,
             'is_blacklisted': c.is_blacklisted,
-            'created_at': c.created_at
+            'created_at': str(c.created_at)
         })
+    set_cache(cache_key, result, ttl=300)
     return jsonify(result), 200
 
 @admin_bp.route('/api/admin/companies/<int:id>', methods=['GET'])
@@ -103,6 +110,7 @@ def approve_company(id):
         return jsonify({'error': 'Company not found'}), 404
     c.approval_status = 'Approved'
     db.session.commit()
+    delete_pattern("companies:*")
     return jsonify({'message': 'Company approved'}), 200
 
 @admin_bp.route('/api/admin/companies/<int:id>/reject', methods=['POST'])
@@ -140,6 +148,10 @@ def get_students():
     name = request.args.get('name')
     student_id = request.args.get('id')
     contact = request.args.get('contact')
+    cache_key = f"students:{name}:{student_id}:{contact}"
+    cached = get_cache(cache_key)
+    if cached:
+        return jsonify(cached), 200
     query = StudentProfile.query
     if name:
         query = query.join(User, StudentProfile.user_id == User.id).filter(User.name.ilike(f'%{name}%'))
@@ -160,8 +172,9 @@ def get_students():
             'experience': s.experience,
             'contact': s.contact,
             'is_blacklisted': s.is_blacklisted,
-            'created_at': s.created_at
+            'created_at': str(s.created_at)
         })
+    set_cache(cache_key, result, ttl=300)
     return jsonify(result), 200
 
 @admin_bp.route('/api/admin/students/<int:id>', methods=['GET'])

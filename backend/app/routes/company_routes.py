@@ -9,6 +9,7 @@ from app.models.user import User
 from ..extensions import db
 
 from app.models.placement import Placement
+from app.utils.cache import delete_pattern
 
 company_bp = Blueprint('company', __name__)
 
@@ -59,6 +60,7 @@ def create_drive():
     )
     db.session.add(new_drive)
     db.session.commit()
+    delete_pattern("drives:*")
     return jsonify({'message': 'Drive created successfully, pending admin approval'}), 201
 
 @company_bp.route('/api/company/drives/<int:drive_id>/close', methods=['POST'])
