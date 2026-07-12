@@ -1,9 +1,9 @@
 <template>
   <div>
-    <nav class="navbar navbar-expand-lg border-bottom">
+    <nav class="navbar navbar-expand-lg border-bottom bg-white">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-          <span class="fw-semibold">Placement Portal</span>
+          <img src="/logo.svg" height="46" alt="Placement Portal" />
         </a>
         <div class="ms-auto">
           <router-link to="/login" class="btn btn-outline-dark btn-sm">Login</router-link>

@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar border-bottom">
       <div class="container">
-        <span class="navbar-brand fw-semibold">Placement Portal | Company</span>
+        <img src="/logo.svg" height="46" alt="Placement Portal" />
         <button @click="logout" class="btn btn-outline-dark btn-sm">Logout</button>
       </div>
     </nav>

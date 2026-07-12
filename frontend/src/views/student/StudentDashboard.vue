@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar border-bottom">
       <div class="container">
-        <span class="navbar-brand fw-semibold">Placement Portal | Student</span>
+        <img src="/logo.svg" height="46" alt="Placement Portal" />
         <div class="d-flex gap-2">
           <button @click="tab = 'profile'" class="btn btn-outline-primary btn-sm">Profile</button>
           <button @click="logout" class="btn btn-outline-dark btn-sm">Logout</button>

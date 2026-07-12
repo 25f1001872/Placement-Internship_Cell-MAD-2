@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-expand-lg border-bottom">
       <div class="container">
-        <span class="navbar-brand fw-semibold">Placement Portal | Admin</span>
+        <img src="/logo.svg" height="46" alt="Placement Portal" />
         <div class="ms-auto">
           <button @click="logout" class="btn btn-outline-dark btn-sm">Logout</button>
         </div>

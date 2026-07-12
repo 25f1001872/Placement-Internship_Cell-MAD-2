@@ -1,4 +1,11 @@
 <template>
+  <div>
+    <nav class="navbar border-bottom">
+      <div class="container">
+        <img src="/logo.svg" height="46" alt="Placement Portal" />
+        <router-link to="/" class="btn btn-outline-dark btn-sm">Home</router-link>
+      </div>
+    </nav>
   <div class="container mt-5">
     <div class="row justify-content-center">
       <div class="col-md-5">
@@ -13,7 +20,7 @@
             <label class="form-label">Password</label>
             <input v-model="password" type="password" class="form-control" />
           </div>
-          <button @click="login" class="btn btn-primary w-100">Login</button>
+          <button @click="login" class="btn btn-dark w-100">Login</button>
           <div class="mt-3 text-center">
             <router-link to="/register/student">Register as Student</router-link> |
             <router-link to="/register/company">Register as Company</router-link>
@@ -21,6 +28,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 

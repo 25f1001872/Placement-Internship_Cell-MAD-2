@@ -1,4 +1,12 @@
 <template>
+  <div>
+    <nav class="navbar border-bottom">
+      <div class="container">
+        <img src="/logo.svg" height="46" alt="Placement Portal" />
+        <router-link to="/" class="btn btn-outline-dark btn-sm">Home</router-link>
+      </div>
+    </nav>
+
   <div class="container mt-5">
     <div class="row justify-content-center">
       <div class="col-md-6">
@@ -34,13 +42,14 @@
             <label class="form-label">Contact</label>
             <input v-model="form.contact" type="text" class="form-control" />
           </div>
-          <button @click="register" class="btn btn-success w-100">Register</button>
+          <button @click="register" class="btn btn-dark w-100">Register</button>
           <div class="mt-3 text-center">
-            <router-link to="/login">Back to Login</router-link>
+            <router-link to="/login">Login</router-link>
           </div>
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
