@@ -19,5 +19,3 @@ celerybeat-schedule
 # IDE
 .vscode/
 .idea/
-
-docs/demo.mp4
